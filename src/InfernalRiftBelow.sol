@@ -8,6 +8,7 @@ pragma solidity ^0.8.0;
 import {LibOptimism} from "@openzeppelin/crosschain/optimism/LibOptimism.sol";
 
 import {IInfernalPackage} from "./inferfaces/IInfernalPackage.sol";
+import {ERC721Bridgable} from "./lib/ERC721Bridgable.sol";
 
 contract InfernalRiftBelow is IInfernalPackage {
 
@@ -36,10 +37,13 @@ contract InfernalRiftBelow is IInfernalPackage {
         // Go through and mint
         uint256 numPackages = packages.length;
         for (uint i; i < numPackages; ) {
-            
-            // If undeployed, deploy and set metadata values
-            // Otherwise, if held by the rift, just send to the new caller
+            Package memory package = packages[i];
+            address l2CollectionAddress = collectionLookup[package.collectionAddress];
 
+            // If not yet deployed, deploy L2 contract
+            if (l2CollectionAddress == 0) {
+            }
+            
             unchecked {
                 ++i;
             }
