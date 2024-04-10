@@ -9,8 +9,10 @@ pragma solidity ^0.8.0;
 import {IERC721Metadata} from "@openzeppelin/token/ERC721/extensions/IERC721Metadata.sol";
 import {ERC2981} from "@openzeppelin/token/common/ERC2981.sol";
 
-import {IInfernalPackage} from "./IInfernalPackage.sol";
-import {IOptimismPortal} from "./IOptimismPortal.sol";
+import {IInfernalPackage} from "./interfaces/IInfernalPackage.sol";
+import {IOptimismPortal} from "./interfaces/IOptimismPortal.sol";
+
+import {InfernalRiftBelow} from "./InfernalRiftBelow.sol";
 
 contract InfernalRiftAbove is IInfernalPackage {
 
@@ -19,7 +21,7 @@ contract InfernalRiftAbove is IInfernalPackage {
     address immutable PORTAL;
     address INFERNAL_RIFT_BELOW;
 
-    error AlreadySet();
+    error RiftBelowAlreadySet();
 
     constructor(address _PORTAL) {
         PORTAL = _PORTAL;
@@ -27,7 +29,7 @@ contract InfernalRiftAbove is IInfernalPackage {
 
     function setInfernalRiftBelow(address a) external {
         if (INFERNAL_RIFT_BELOW != address(0)) {
-            revert AlreadySet();
+            revert RiftBelowAlreadySet();
         }
         INFERNAL_RIFT_BELOW = a;
     }
@@ -49,10 +51,12 @@ contract InfernalRiftAbove is IInfernalPackage {
             uint256 numIds = idsToCross[i].length;
             address collectionAddress = collectionAddresses[i];
 
-            // Set token URIs
+            // Set token URIs and take NFTs
             string[] memory uris = new string[](numIds);
             for (uint j; j < numIds; ) {
                 uris[j] = IERC721Metadata(collectionAddress).tokenURI(idsToCross[i][j]);
+                // Take NFTs
+                IERC721Metadata(collectionAddress).transferFrom(msg.sender, address(this), idsToCross[i][j]);
                 unchecked {
                     ++j;
                 }
@@ -60,10 +64,10 @@ contract InfernalRiftAbove is IInfernalPackage {
 
             // Grab royalty from first ID
             uint96 royaltyBps;
-            try ERC2981(collectionAddress).royaltyInfo(idsToCross[i][0], BPS_MULTIPLIER) returns (address a, uint256 _royaltyAmount) {
+            try ERC2981(collectionAddress).royaltyInfo(idsToCross[i][0], BPS_MULTIPLIER) returns (address, uint256 _royaltyAmount) {
                 royaltyBps = uint96(_royaltyAmount);
             } catch {
-                // It's okay if it reverts :^)
+                // It's okay if it reverts (:
             }
 
             // Set up payload
@@ -79,14 +83,13 @@ contract InfernalRiftAbove is IInfernalPackage {
                 ++i;
             }
         }
-        // Send it off to the portal
+        // Send package off to the portal
         IOptimismPortal(PORTAL).depositTransaction{value: msg.value}(
             INFERNAL_RIFT_BELOW, 
             0,
             gasLimit, 
             false,
-            // abi.encodeWithSelector(, abi.encode(package));
-            abi.encode(package)
+            abi.encodeWithSelector(InfernalRiftBelow.thresholdCross.selector, abi.encode(package))
         );
     }
 

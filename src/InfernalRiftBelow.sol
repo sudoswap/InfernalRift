@@ -7,15 +7,15 @@ pragma solidity ^0.8.0;
 
 import {LibOptimism} from "@openzeppelin/crosschain/optimism/LibOptimism.sol";
 
-import {IInfernalPackage} from "./IInfernalPackage.sol";
+import {IInfernalPackage} from "./inferfaces/IInfernalPackage.sol";
 
 contract InfernalRiftBelow is IInfernalPackage {
 
     address constant RELAYER_ADDRESS = 0x4200000000000000000000000000000000000007;
     address immutable INFERNAL_RIFT_ABOVE;
 
-    error InfidelDetected;
-    error HeathenDetected;
+    error NotCrossDomainMessenger();
+    error CrossChainSenderIsNotRiftAbove();
 
     mapping(address => address) public collectionLookup;
 
@@ -27,10 +27,10 @@ contract InfernalRiftBelow is IInfernalPackage {
 
         // Ensure call is coming from Infernal Rift Above
         if (msg.sender != RELAYER_ADDRESS) {
-            revert InfidelDetected();
+            revert NotCrossDomainMessenger();
         }
         if (LibOptimism.crossChainSender(msg.sender) != INFERNAL_RIFT_ABOVE) {
-            revert HeathenDetected();
+            revert CrossChainSenderIsNotRiftAbove();
         }
 
         // Go through and mint
@@ -38,7 +38,7 @@ contract InfernalRiftBelow is IInfernalPackage {
         for (uint i; i < numPackages; ) {
             
             // If undeployed, deploy and set metadata values
-            // Otherwise, just mint
+            // Otherwise, if held by the rift, just send to the new caller
 
             unchecked {
                 ++i;
