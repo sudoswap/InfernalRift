@@ -37,6 +37,7 @@ contract InfernalRiftAbove is IInfernalPackage {
     function crossTheThreshold(
         address[] calldata collectionAddresses,
         uint256[][] calldata idsToCross,
+        address recipient,
         uint64 gasLimit
     ) payable external {
 
@@ -50,19 +51,18 @@ contract InfernalRiftAbove is IInfernalPackage {
             // Cache values needed
             uint256 numIds = idsToCross[i].length;
             address collectionAddress = collectionAddresses[i];
-
-            // Set token URIs and take NFTs
+            
+            // Go through each NFT, set its URI and escrow it
             string[] memory uris = new string[](numIds);
             for (uint j; j < numIds; ) {
                 uris[j] = IERC721Metadata(collectionAddress).tokenURI(idsToCross[i][j]);
-                // Take NFTs
                 IERC721Metadata(collectionAddress).transferFrom(msg.sender, address(this), idsToCross[i][j]);
                 unchecked {
                     ++j;
                 }
             }
 
-            // Grab royalty from first ID
+            // Grab royalty value from first ID
             uint96 royaltyBps;
             try ERC2981(collectionAddress).royaltyInfo(idsToCross[i][0], BPS_MULTIPLIER) returns (address, uint256 _royaltyAmount) {
                 royaltyBps = uint96(_royaltyAmount);
@@ -89,14 +89,8 @@ contract InfernalRiftAbove is IInfernalPackage {
             0,
             gasLimit, 
             false,
-            abi.encodeWithSelector(InfernalRiftBelow.thresholdCross.selector, abi.encode(package))
+            abi.encodeWithSelector(InfernalRiftBelow.thresholdCross.selector, abi.encode(package, recipient))
         );
-    }
-
-    function returnFromThreshold(
-
-    ) external {
-
     }
 
 }

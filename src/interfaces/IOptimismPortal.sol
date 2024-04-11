@@ -2,6 +2,9 @@
 
 pragma solidity ^0.8.0;
 
+/// @dev This interface is used on L1, we avoid spending extra gas on storing nonces / emitting additional events
+/// Gas limit needs to be measured exactly, otherwise the NFTs are rekt D:
+
 interface IOptimismPortal {
 
     /// @notice Accepts deposits of ETH and data, and emits a TransactionDeposited event for use in

@@ -5,7 +5,7 @@ pragma solidity >=0.8.0;
 /* solhint-disable var-name-mixedcase */
 /* solhint-disable func-param-name-mixedcase */
 
-import {ERC2981} from "@openzeppelin/token/common/ERC2981.sol";
+import {ERC2981, IERC2981} from "@openzeppelin/token/common/ERC2981.sol";
 
 /// Forked from Solmate:
 /// @notice Modern, minimalist, and gas efficient ERC-721 implementation.
@@ -40,7 +40,8 @@ abstract contract ERC721 {
     mapping(address => uint256) internal _balanceOf;
 
     function ownerOf(uint256 id) public view virtual returns (address owner) {
-        require((owner = _ownerOf[id]) != address(0), "NOT_MINTED");
+        // If owner is 0, it means it is either burned or unminted
+        owner = _ownerOf[id];
     }
 
     function balanceOf(address owner) public view virtual returns (uint256) {
@@ -242,36 +243,55 @@ contract ERC721Bridgable is ERC721, ERC2981 {
     address immutable INFERNAL_RIFT_BELOW;
 
     mapping(uint256 => string) uriForToken;
+    bool initialized;
 
     error NotRiftBelow();
+    error AlreadyInitialized();
 
     constructor(
-        string memory name, 
-        string memory symbol,
-        address _INFERNAL_RIFT_BELOW,
-        uint96 royaltyBps
+        string memory _name, 
+        string memory _symbol,
+        address _INFERNAL_RIFT_BELOW
     ) 
-        ERC721(name, symbol) 
+        ERC721(_name, _symbol) 
     {
-        _setDefaultRoyalty(address(this), royaltyBps);
         INFERNAL_RIFT_BELOW = _INFERNAL_RIFT_BELOW;
+    }
+
+    function initialize(
+        string memory _name, 
+        string memory _symbol,
+        uint96 royaltyBps
+    ) external {
+        if (msg.sender != INFERNAL_RIFT_BELOW) {
+            revert NotRiftBelow();
+        }
+        if (initialized) {
+            revert AlreadyInitialized();
+        }
+        name = _name;
+        symbol = _symbol;
+        _setDefaultRoyalty(address(this), royaltyBps);
+        initialized = true;
     }
 
     function tokenURI(uint256 id) public view override returns (string memory) {
         return uriForToken[id];
     }
 
-    function setTokenURIsAndMintFromRiftAbove(uint256[] calldata ids, string[] memory tokenURIs, address recipient) external {
+    function setTokenURIAndMintFromRiftAbove(uint256 id, string memory uri, address recipient) external {
         if (msg.sender != INFERNAL_RIFT_BELOW) {
             revert NotRiftBelow();
         }
-        uint256 numIds = ids.length;
-        for (uint i; i < numIds; ) {
-            uriForToken[ids[i]] = tokenURIs[i];
-            _mint(recipient, ids[i]);
-            unchecked {
-                ++i;
-            }
-        }
+        uriForToken[id] = uri;
+        _mint(recipient, id);
+    }
+
+    // Overrides both ERC721 and ERC2981
+    function supportsInterface(bytes4 interfaceId) public pure override(ERC2981, ERC721) returns (bool) {
+        return interfaceId == 0x01ffc9a7 // ERC165 Interface ID for ERC165
+            || interfaceId == 0x80ac58cd // ERC165 Interface ID for ERC721
+            || interfaceId == type(IERC2981).interfaceId // ERC165 interface for IERC2981
+            || interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
     }
 }
