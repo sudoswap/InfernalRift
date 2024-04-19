@@ -14,27 +14,27 @@ import {ICrossDomainMessenger} from "./interfaces/ICrossDomainMessenger.sol";
 import {ERC721Bridgable} from "./libs/ERC721Bridgable.sol";
 
 contract InfernalRiftBelow is IInfernalPackage {
+
     address immutable RELAYER_ADDRESS;
     address immutable L2_CROSS_DOMAIN_MESSENGER;
     address immutable INFERNAL_RIFT_ABOVE;
-    address immutable ERC721_BRIDGABLE_IMPLEMENTATION;
 
-    error NotCrossDomainMessenger();
+    error TemplateAlreadySet();
+    error NotRelayerCaller();
     error CrossChainSenderIsNotRiftAbove();
     error L1CollectionDoesNotExist();
 
     mapping(address => address) public l1AddressForL2Collection;
+    address ERC721_BRIDGABLE_IMPLEMENTATION;
 
     constructor(
         address _RELAYER_ADDRESS,
         address _L2_CROSS_DOMAIN_MESSENGER,
-        address _INFERNAL_RIFT_ABOVE,
-        address _ERC721_BRIDGABLE_IMPLEMENTATION
+        address _INFERNAL_RIFT_ABOVE
     ) {
         RELAYER_ADDRESS = _RELAYER_ADDRESS;
         L2_CROSS_DOMAIN_MESSENGER = _L2_CROSS_DOMAIN_MESSENGER;
         INFERNAL_RIFT_ABOVE = _INFERNAL_RIFT_ABOVE;
-        ERC721_BRIDGABLE_IMPLEMENTATION = _ERC721_BRIDGABLE_IMPLEMENTATION;
     }
 
     function l2AddressForL1Collection(address l1CollectionAddress) public view returns (address l2CollectionAddress) {
@@ -46,10 +46,17 @@ contract InfernalRiftBelow is IInfernalPackage {
         isDeployed = l2AddressForL1Collection(l1CollectionAddress).code.length > 0;
     }
 
+    function initializeERC721Bridgable(address a) external {
+        if (ERC721_BRIDGABLE_IMPLEMENTATION != address(0)) {
+            revert TemplateAlreadySet();
+        }
+        ERC721_BRIDGABLE_IMPLEMENTATION = a;
+    }
+
     function thresholdCross(Package[] calldata packages, address recipient) external {
         // Ensure call is coming from the cross chain messenger, and original msg.sender is Infernal Rift Above
         if (msg.sender != RELAYER_ADDRESS) {
-            revert NotCrossDomainMessenger();
+            revert NotRelayerCaller();
         }
         if (ICrossDomainMessenger(msg.sender).xDomainMessageSender() != INFERNAL_RIFT_ABOVE) {
             revert CrossChainSenderIsNotRiftAbove();

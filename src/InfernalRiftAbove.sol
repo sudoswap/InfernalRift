@@ -117,7 +117,7 @@ contract InfernalRiftAbove is IInfernalPackage, IInfernalRiftAbove {
             address l1CollectionAddress = collectionAddresses[i];
             uint256 numIds = idsToCross[i].length;
             for (uint256 j; j < numIds;) {
-                IERC721(l1CollectionAddress).transferFrom(address(this), recipient, idsToCross[i][j]);
+                IERC721Metadata(l1CollectionAddress).transferFrom(address(this), recipient, idsToCross[i][j]);
                 unchecked {
                     ++j;
                 }
