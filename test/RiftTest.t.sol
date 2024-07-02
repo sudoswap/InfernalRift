@@ -12,6 +12,7 @@ import "forge-std/Test.sol";
 
 import {Test721} from "./mocks/Test721.sol";
 import {MockPortalAndCrossDomainMessenger} from "./mocks/MockPortalAndCrossDomainMessenger.sol";
+import {MockRoyaltyRegistry} from "./mocks/MockRoyaltyRegistry.sol";
 import {ERC721Bridgable} from "../src/libs/ERC721Bridgable.sol";
 
 import {InfernalRiftAbove} from "../src/InfernalRiftAbove.sol";
@@ -23,6 +24,7 @@ contract RiftTest is Test {
 
     Test721 l1NFT;
     MockPortalAndCrossDomainMessenger mockPortalAndMessenger;
+    MockRoyaltyRegistry mockRoyaltyRegistry;
     ERC721Bridgable erc721Template;
     InfernalRiftAbove riftAbove;
     InfernalRiftBelow riftBelow;
@@ -40,9 +42,11 @@ contract RiftTest is Test {
 
         l1NFT = new Test721();
         mockPortalAndMessenger = new MockPortalAndCrossDomainMessenger();
+        mockRoyaltyRegistry = new MockRoyaltyRegistry();
         riftAbove = new InfernalRiftAbove(
             address(mockPortalAndMessenger),
-            address(mockPortalAndMessenger)
+            address(mockPortalAndMessenger),
+            address(mockRoyaltyRegistry)
         );
         riftBelow = new InfernalRiftBelow(
             address(mockPortalAndMessenger), // pretend the portal *is* the relayer
