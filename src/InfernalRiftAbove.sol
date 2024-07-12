@@ -10,6 +10,7 @@ import {IERC721Metadata} from "@openzeppelin/token/ERC721/extensions/IERC721Meta
 import {ERC2981} from "@openzeppelin/token/common/ERC2981.sol";
 
 import {IInfernalPackage} from "./interfaces/IInfernalPackage.sol";
+import {IRoyaltyRegistry} from "./interfaces/IRoyaltyRegistry.sol";
 import {IInfernalRiftAbove} from "./interfaces/IInfernalRiftAbove.sol";
 import {ICrossDomainMessenger} from "./interfaces/ICrossDomainMessenger.sol";
 import {IOptimismPortal} from "./interfaces/IOptimismPortal.sol";
@@ -21,15 +22,17 @@ contract InfernalRiftAbove is IInfernalPackage, IInfernalRiftAbove {
 
     address immutable PORTAL;
     address immutable L1_CROSS_DOMAIN_MESSENGER;
+    address immutable ROYALTY_REGISTRY;
     address INFERNAL_RIFT_BELOW;
 
     error RiftBelowAlreadySet();
     error NotCrossDomainMessenger();
     error CrossChainSenderIsNotRiftBelow();
 
-    constructor(address _PORTAL, address _L1_CROSS_DOMAIN_MESSENGER) {
+    constructor(address _PORTAL, address _L1_CROSS_DOMAIN_MESSENGER, address _ROYALTY_REGISTRY) {
         PORTAL = _PORTAL;
         L1_CROSS_DOMAIN_MESSENGER = _L1_CROSS_DOMAIN_MESSENGER;
+        ROYALTY_REGISTRY = _ROYALTY_REGISTRY;
     }
 
     function setInfernalRiftBelow(address a) external {
@@ -66,8 +69,9 @@ contract InfernalRiftAbove is IInfernalPackage, IInfernalRiftAbove {
             }
 
             // Grab royalty value from first ID
+            address royaltyLookupAddress = IRoyaltyRegistry(ROYALTY_REGISTRY).getRoyaltyLookupAddress(collectionAddress);
             uint96 royaltyBps;
-            try ERC2981(collectionAddress).royaltyInfo(idsToCross[i][0], BPS_MULTIPLIER) returns (
+            try ERC2981(royaltyLookupAddress).royaltyInfo(idsToCross[i][0], BPS_MULTIPLIER) returns (
                 address, uint256 _royaltyAmount
             ) {
                 royaltyBps = uint96(_royaltyAmount);
