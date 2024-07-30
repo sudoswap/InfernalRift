@@ -11,7 +11,7 @@ pragma solidity ^0.8.0;
 import {IRoyaltyRegistry} from "../../src/interfaces/IRoyaltyRegistry.sol";
 
 contract MockRoyaltyRegistry is IRoyaltyRegistry {
-    function getRoyaltyLookupAddress(address tokenAddress) external view returns (address) {
+    function getRoyaltyLookupAddress(address tokenAddress) external pure returns (address) {
         return tokenAddress;
     }
 }
