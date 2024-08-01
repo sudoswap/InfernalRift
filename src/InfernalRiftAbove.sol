@@ -30,7 +30,6 @@ contract InfernalRiftAbove is IInfernalPackage, IInfernalRiftAbove {
     error RiftBelowAlreadySet();
     error NotCrossDomainMessenger();
     error CrossChainSenderIsNotRiftBelow();
-
     error CollectionNotERC2981Compliant();
     error CallerIsNotRoyaltiesReceiver(address _caller, address _receiver);
 
@@ -40,6 +39,13 @@ contract InfernalRiftAbove is IInfernalPackage, IInfernalRiftAbove {
         ROYALTY_REGISTRY = IRoyaltyRegistry(_ROYALTY_REGISTRY);
     }
 
+    /**
+     * Allows the {InfernalRiftBelow} contract to be set.
+     * 
+     * @dev This contract address cannot be updated if a non-zero address already set.
+     * 
+     * @param _infernalRiftBelow Address of the {InfernalRiftBelow} contract
+     */
     function setInfernalRiftBelow(address _infernalRiftBelow) external {
         if (INFERNAL_RIFT_BELOW != address(0)) {
             revert RiftBelowAlreadySet();
@@ -48,6 +54,14 @@ contract InfernalRiftAbove is IInfernalPackage, IInfernalRiftAbove {
         INFERNAL_RIFT_BELOW = _infernalRiftBelow;
     }
 
+    /**
+     * Sends ERC721 tokens from the L1 chain to L2.
+     * 
+     * @param collectionAddresses Addresses of collections returning from L2
+     * @param idsToCross Array of tokenIds, with the first iterator referring to collectionAddress
+     * @param recipient The recipient of the tokens on L2
+     * @param gasLimit The maximum amount of gas to spend in transaction
+     */
     function crossTheThreshold(
         address[] calldata collectionAddresses,
         uint[][] calldata idsToCross,
@@ -114,6 +128,10 @@ contract InfernalRiftAbove is IInfernalPackage, IInfernalRiftAbove {
      * Handle NFTs being transferred back to the L1 from the L2.
      * 
      * @dev The NFTs must be stored in this contract to redistribute back on L1
+     * 
+     * @param collectionAddresses Addresses of collections returning from L2
+     * @param idsToCross Array of tokenIds, with the first iterator referring to collectionAddress
+     * @param recipient The recipient of the tokens
      */
     function returnFromTheThreshold(
         address[] calldata collectionAddresses,
